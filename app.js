@@ -684,6 +684,20 @@ function configFirebase() {
   try { return JSON.parse(localStorage.getItem(FB_KEY)) || null; } catch { return null; }
 }
 
+// Aceita JSON puro ou o trecho "const firebaseConfig = {...}" copiado do console
+// (chaves sem aspas, aspas simples, vírgula final). Só coloca aspas em chaves
+// logo após "{" ou "," para não mexer em valores com ":" (ex.: appId).
+function parseFirebaseConfig(texto) {
+  const m = texto.match(/\{[\s\S]*\}/);
+  const bruto = m ? m[0] : texto;
+  try { return JSON.parse(bruto); } catch { /* tenta como objeto JS */ }
+  const ajustado = bruto
+    .replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g, '$1"$2":')
+    .replace(/'/g, '"')
+    .replace(/,\s*([}\]])/g, '$1');
+  return JSON.parse(ajustado);
+}
+
 async function iniciarFirebase() {
   const cfg = configFirebase();
   renderAjustes();
@@ -929,9 +943,7 @@ function ligarEventos() {
   $('#btn-salvar-firebase').onclick = () => {
     const texto = $('#firebase-config').value.trim();
     try {
-      // aceita tanto JSON puro quanto o trecho "const firebaseConfig = {...}"
-      const m = texto.match(/\{[\s\S]*\}/);
-      const cfg = JSON.parse(m ? m[0].replace(/(\w+)\s*:/g, '"$1":').replace(/'/g, '"').replace(/,\s*}/g, '}') : texto);
+      const cfg = parseFirebaseConfig(texto);
       if (!cfg.apiKey || !cfg.projectId) throw new Error('faltam campos');
       localStorage.setItem(FB_KEY, JSON.stringify(cfg));
       toast('Configuração salva. Iniciando…');
