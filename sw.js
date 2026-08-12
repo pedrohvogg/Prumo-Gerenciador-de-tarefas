@@ -1,6 +1,6 @@
 /* Service worker: deixa o app funcionar offline.
    Estratégia: rede primeiro (para pegar versões novas), cache como reserva. */
-const CACHE = 'planejador-v1';
+const CACHE = 'prumo-v3';
 const ARQUIVOS = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icons/icon.svg'];
 
 self.addEventListener('install', (ev) => {

@@ -133,6 +133,12 @@ function ordenarPrioridade(lista) {
     pontuacao(b) - pontuacao(a) ||
     (a.dataPrevista || '9999').localeCompare(b.dataPrevista || '9999'));
 }
+// Para as visões de dia: quem tem horário vem primeiro (em ordem), o resto por prioridade
+function ordenarDia(lista) {
+  return lista.sort((a, b) =>
+    (a.hora || '99:99').localeCompare(b.hora || '99:99') ||
+    pontuacao(b) - pontuacao(a));
+}
 
 function registrarAcao(data, texto) {
   const j = diarioDe(data);
@@ -174,6 +180,7 @@ function htmlBadges(t, data) {
   const cat = CATEGORIAS[t.categoria] || { nome: t.categoria, cor: 'var(--muted)' };
   const hoje = dataStr();
   let b = `<span class="badge cat">${escaparHtml(cat.nome)}</span>`;
+  if (t.hora) b += `<span class="badge">🕒 ${escaparHtml(t.hora)}</span>`;
   if (t.urgencia >= 3) b += `<span class="badge urgente">Urgente</span>`;
   if (t.importancia >= 3) b += `<span class="badge">Importante</span>`;
   if (t.tempoEstimado) b += `<span class="badge">⏱ ${fmtTempo(t.tempoEstimado)}</span>`;
@@ -223,6 +230,7 @@ function ligarEventosTarefas(raiz) {
   });
   raiz.querySelectorAll('[data-editar]').forEach(el => {
     el.onclick = (ev) => {
+      ev.stopPropagation();
       if (ev.target.closest('.entrega-linha')) return;
       abrirModal(itens[el.dataset.editar]);
     };
@@ -252,8 +260,8 @@ function renderHoje() {
     dataHoje === addDias(hojeReal, -1) ? 'Ontem' : fmtDataCurta(dataHoje);
   $('#hoje-data').textContent = fmtData(dataHoje);
 
-  const doDia = ordenarPrioridade(tarefasDoDia(dataHoje));
-  const rec = ordenarPrioridade(recorrentesDoDia(dataHoje));
+  const doDia = ordenarDia(tarefasDoDia(dataHoje));
+  const rec = ordenarDia(recorrentesDoDia(dataHoje));
   const atrasadas = dataHoje === hojeReal
     ? ordenarPrioridade(tarefas().filter(t => atrasada(t, hojeReal))) : [];
 
@@ -281,6 +289,11 @@ function renderHoje() {
 
 let semanaInicio = inicioSemana(dataStr());
 
+function irParaDia(dia) {
+  dataHoje = dia;
+  mostrarView('hoje');
+}
+
 function renderSemana() {
   const fim = addDias(semanaInicio, 6);
   $('#semana-intervalo').textContent = `${fmtDataCurta(semanaInicio)} – ${fmtDataCurta(fim)}`;
@@ -288,26 +301,28 @@ function renderSemana() {
   let html = '';
   for (let i = 0; i < 7; i++) {
     const dia = addDias(semanaInicio, i);
-    const lista = ordenarPrioridade([...tarefasDoDia(dia), ...recorrentesDoDia(dia)]);
+    const lista = ordenarDia([...tarefasDoDia(dia), ...recorrentesDoDia(dia)]);
     const d = deStr(dia);
     html += `
-      <div class="semana-dia ${dia === hoje ? 'hoje' : ''}">
+      <div class="semana-dia ${dia === hoje ? 'hoje' : ''}" data-abrirdia="${dia}" title="Abrir o dia">
         <div class="semana-dia-topo"><span>${DIAS_SEMANA[d.getDay()]}</span><span>${d.getDate()}</span></div>
         ${lista.map(t => `
           <div class="semana-item ${concluidaNoDia(t, dia) ? 'concluida' : ''}"
                style="--cat-cor:${(CATEGORIAS[t.categoria] || {}).cor || 'var(--muted)'}"
-               data-editar="${t.id}">${escaparHtml(t.titulo)}</div>`).join('')}
+               data-editar="${t.id}">${t.hora ? escaparHtml(t.hora) + ' ' : ''}${escaparHtml(t.titulo)}</div>`).join('')}
       </div>`;
   }
   $('#semana-grid').innerHTML = html;
   ligarEventosTarefas($('#semana-grid'));
+  $$('#semana-grid [data-abrirdia]').forEach(el => {
+    el.onclick = () => irParaDia(el.dataset.abrirdia);
+  });
 }
 
 /* ============================ Render: Mês ============================ */
 
 let mesAno = new Date().getFullYear();
 let mesNum = new Date().getMonth();
-let mesDiaSelecionado = dataStr();
 
 function renderMes() {
   $('#mes-titulo').textContent = `${MESES[mesNum]} ${mesAno}`;
@@ -324,23 +339,184 @@ function renderMes() {
     const lista = [...tarefasDoDia(dia), ...recorrentesDoDia(dia)];
     const cores = [...new Set(lista.map(t => (CATEGORIAS[t.categoria] || {}).cor || 'var(--muted)'))];
     html += `
-      <div class="mes-dia ${fora ? 'fora' : ''} ${dia === hoje ? 'hoje' : ''} ${dia === mesDiaSelecionado ? 'selecionado' : ''}" data-dia="${dia}">
+      <div class="mes-dia ${fora ? 'fora' : ''} ${dia === hoje ? 'hoje' : ''}" data-abrirdia="${dia}" title="Abrir o dia">
         <span class="mes-dia-num">${d.getDate()}</span>
         <span class="mes-pontos">${cores.slice(0, 4).map(c => `<span class="mes-ponto" style="--cat-cor:${c}"></span>`).join('')}</span>
         ${lista.length > 4 ? `<span class="mes-mais">+${lista.length - 4}</span>` : ''}
       </div>`;
   }
   $('#mes-grid').innerHTML = html;
-  $$('#mes-grid .mes-dia').forEach(el => {
-    el.onclick = () => { mesDiaSelecionado = el.dataset.dia; renderMes(); };
+  $$('#mes-grid [data-abrirdia]').forEach(el => {
+    el.onclick = () => irParaDia(el.dataset.abrirdia);
   });
+}
 
-  $('#mes-dia-titulo').textContent = `Tarefas de ${fmtData(mesDiaSelecionado)}`;
-  const lista = ordenarPrioridade([...tarefasDoDia(mesDiaSelecionado), ...recorrentesDoDia(mesDiaSelecionado)]);
-  $('#mes-dia-tarefas').innerHTML = lista.length
-    ? lista.map(t => htmlTarefa(t, mesDiaSelecionado, { compacta: true })).join('')
-    : '<p class="vazio">Nada neste dia.</p>';
-  ligarEventosTarefas($('#mes-dia-tarefas'));
+/* ============================ Render: Painel ============================ */
+
+const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira',
+                     'quinta-feira', 'sexta-feira', 'sábado'];
+
+// Mapa data → nº de conclusões, a partir dos dados já salvos
+function mapaConclusoes() {
+  const m = {};
+  for (const t of tarefas()) {
+    if (t.recorrencia) {
+      (t.datasConcluidas || []).forEach(d => { m[d] = (m[d] || 0) + 1; });
+    } else if (t.status === 'concluida' && t.concluidaEm) {
+      m[t.concluidaEm] = (m[t.concluidaEm] || 0) + 1;
+    }
+  }
+  return m;
+}
+
+function somaPeriodo(conc, inicio, fim) {
+  let s = 0;
+  for (let d = inicio; d <= fim; d = addDias(d, 1)) s += conc[d] || 0;
+  return s;
+}
+
+// Taxa de conclusão: do que estava previsto no período, quanto foi concluído
+function taxaPeriodo(inicio, fim) {
+  let previstas = 0, feitas = 0;
+  for (let d = inicio; d <= fim; d = addDias(d, 1)) {
+    for (const t of [...tarefasDoDia(d), ...recorrentesDoDia(d)]) {
+      previstas++;
+      if (concluidaNoDia(t, d)) feitas++;
+    }
+  }
+  return previstas ? Math.round(100 * feitas / previstas) : null;
+}
+
+function htmlDelta(atual, anterior, unidade) {
+  if (anterior === null || atual === null) return '';
+  const d = atual - anterior;
+  if (d > 0) return `<span class="stat-delta sobe">▲ +${d}${unidade} vs semana passada</span>`;
+  if (d < 0) return `<span class="stat-delta desce">▼ ${d}${unidade} vs semana passada</span>`;
+  return `<span class="stat-delta igual">= igual à semana passada</span>`;
+}
+
+function renderPainel() {
+  const hoje = dataStr();
+  const conc = mapaConclusoes();
+
+  /* ---- Visão geral ---- */
+  const ativas = tarefas().filter(t => !t.recorrencia && t.status !== 'concluida').length;
+  const nAtrasadas = tarefas().filter(t => atrasada(t, hoje)).length;
+  const semIni = inicioSemana(hoje);
+  const semPrevIni = addDias(semIni, -7), semPrevFim = addDias(semIni, -1);
+  const concSemana = somaPeriodo(conc, semIni, hoje);
+  const concSemPrev = somaPeriodo(conc, semPrevIni, semPrevFim);
+  const taxa = taxaPeriodo(semIni, hoje);
+  const taxaPrev = taxaPeriodo(semPrevIni, semPrevFim);
+
+  $('#painel-visao').innerHTML = `
+    <div class="stat-tile"><span class="stat-num">${ativas}</span><span class="stat-rot">demandas ativas</span></div>
+    <div class="stat-tile"><span class="stat-num">${concSemana}</span><span class="stat-rot">concluídas na semana</span>${htmlDelta(concSemana, concSemPrev, '')}</div>
+    <div class="stat-tile"><span class="stat-num ${nAtrasadas ? 'perigo' : ''}">${nAtrasadas}</span><span class="stat-rot">atrasadas</span></div>
+    <div class="stat-tile"><span class="stat-num">${taxa === null ? '—' : taxa + '%'}</span><span class="stat-rot">taxa de conclusão</span>${htmlDelta(taxa, taxaPrev, ' p.p.')}</div>`;
+
+  /* ---- Produtividade: últimos 14 dias ---- */
+  const dias14 = [];
+  for (let i = 13; i >= 0; i--) dias14.push(addDias(hoje, -i));
+  const max14 = Math.max(1, ...dias14.map(d => conc[d] || 0));
+  $('#painel-grafico').innerHTML = dias14.map(d => {
+    const n = conc[d] || 0;
+    const dt = deStr(d);
+    return `
+      <div class="g-col ${n ? '' : 'vazia'} ${d === hoje ? 'hoje' : ''}"
+           title="${DIAS_SEMANA[dt.getDay()]} ${fmtDataCurta(d)}: ${n} concluída${n === 1 ? '' : 's'}">
+        <span class="g-val ${n === max14 && n > 0 ? 'fixo' : ''}">${n || ''}</span>
+        <div class="g-bar" style="height:${Math.round(100 * n / max14)}%"></div>
+        <span class="g-rot">${dt.getDate()}</span>
+      </div>`;
+  }).join('');
+
+  const porDiaSemana = [0, 0, 0, 0, 0, 0, 0];
+  for (const [d, n] of Object.entries(conc)) porDiaSemana[deStr(d).getDay()] += n;
+  const totalConc = porDiaSemana.reduce((a, b) => a + b, 0);
+  if (totalConc) {
+    const melhor = porDiaSemana.indexOf(Math.max(...porDiaSemana));
+    $('#painel-melhor-dia').innerHTML =
+      `Seu melhor dia é <strong>${DIAS_LONGOS[melhor]}</strong> — ${porDiaSemana[melhor]} de ${totalConc} conclusões até agora.`;
+  } else {
+    $('#painel-melhor-dia').textContent = 'Conclua tarefas para descobrir seu melhor dia da semana.';
+  }
+
+  /* ---- Categorias ---- */
+  const corte14 = addDias(hoje, -13);
+  const porCat = {};
+  for (const id of Object.keys(CATEGORIAS)) porCat[id] = { ativas: 0, feitas: 0, feitas14: 0 };
+  for (const t of tarefas()) {
+    const c = porCat[t.categoria];
+    if (!c) continue;
+    if (t.recorrencia) {
+      const datas = t.datasConcluidas || [];
+      c.feitas += datas.length;
+      c.feitas14 += datas.filter(d => d >= corte14 && d <= hoje).length;
+    } else if (t.status === 'concluida') {
+      c.feitas++;
+      if (t.concluidaEm && t.concluidaEm >= corte14) c.feitas14++;
+    } else {
+      c.ativas++;
+    }
+  }
+  const maxCat = Math.max(1, ...Object.values(porCat).map(c => c.ativas + c.feitas));
+  $('#painel-categorias').innerHTML = Object.entries(CATEGORIAS).map(([id, cat]) => {
+    const c = porCat[id];
+    const negligenciada = c.ativas >= 2 && c.feitas14 === 0;
+    const total = c.ativas + c.feitas;
+    return `
+      <div class="cat-linha" style="--cat-cor:${cat.cor}">
+        <div class="cat-linha-topo">
+          <span class="cat-nome"><span class="cat-ponto"></span>${escaparHtml(cat.nome)}</span>
+          ${negligenciada ? '<span class="badge neglig">⚠ precisa de atenção</span>' : ''}
+          <span class="cat-nums">${c.ativas} ativa${c.ativas === 1 ? '' : 's'} · ${c.feitas} concluída${c.feitas === 1 ? '' : 's'}</span>
+        </div>
+        ${total ? `
+        <div class="cat-barra" title="${escaparHtml(cat.nome)}: ${c.feitas} concluídas, ${c.ativas} ativas">
+          ${c.feitas ? `<span class="cat-seg feitas" style="width:${100 * c.feitas / maxCat}%"></span>` : ''}
+          ${c.ativas ? `<span class="cat-seg abertas" style="width:${100 * c.ativas / maxCat}%"></span>` : ''}
+        </div>` : ''}
+      </div>`;
+  }).join('') + `
+    <div class="cat-legenda">
+      <span><span class="leg-quad"></span>concluídas</span>
+      <span><span class="leg-quad claro"></span>ativas</span>
+    </div>`;
+
+  /* ---- Sequências ---- */
+  let atual = 0;
+  let cursor = conc[hoje] ? hoje : addDias(hoje, -1);
+  while (conc[cursor]) { atual++; cursor = addDias(cursor, -1); }
+
+  let recorde = 0, corrida = 0, anterior = null;
+  for (const d of Object.keys(conc).sort()) {
+    corrida = (anterior && addDias(anterior, 1) === d) ? corrida + 1 : 1;
+    recorde = Math.max(recorde, corrida);
+    anterior = d;
+  }
+
+  $('#painel-streaks').innerHTML = `
+    <div class="stat-tile"><span class="stat-num">🔥 ${atual}</span><span class="stat-rot">dia${atual === 1 ? '' : 's'} seguidos com conclusão</span></div>
+    <div class="stat-tile"><span class="stat-num">🏆 ${recorde}</span><span class="stat-rot">recorde histórico</span></div>`;
+
+  /* mini-calendário do mês atual */
+  const hd = deStr(hoje);
+  const ano = hd.getFullYear(), mes = hd.getMonth();
+  const primeiroDia = new Date(ano, mes, 1);
+  const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+  $('#painel-minical-titulo').textContent = `Dias ativos em ${MESES[mes].toLowerCase()}`;
+  let cal = '';
+  for (let i = 0; i < primeiroDia.getDay(); i++) cal += `<span class="mini-dia fora"></span>`;
+  for (let dia = 1; dia <= ultimoDia; dia++) {
+    const ds = dataStr(new Date(ano, mes, dia));
+    const classes = ['mini-dia'];
+    if (conc[ds]) classes.push('ativo');
+    if (ds === hoje) classes.push('hoje');
+    if (ds > hoje) classes.push('futuro');
+    cal += `<span class="${classes.join(' ')}" title="${fmtDataCurta(ds)}${conc[ds] ? `: ${conc[ds]} conclusão(ões)` : ''}">${dia}</span>`;
+  }
+  $('#painel-minical').innerHTML = cal;
 }
 
 /* ============================ Render: Demandas ============================ */
@@ -486,6 +662,7 @@ Responda em português e TERMINE a resposta com um único bloco JSON válido, ex
   "urgencia": 1,
   "importancia": 1,
   "data_prevista": "YYYY-MM-DD ou null",
+  "horario": "HH:MM ou null",
   "tempo_estimado_minutos": 0,
   "entregas": [{"texto": "entrega prevista", "data": "YYYY-MM-DD ou null"}],
   "recorrencia": null
@@ -535,6 +712,7 @@ function criarDaResposta() {
   t.urgencia = Math.min(3, Math.max(1, +dados.urgencia || 2));
   t.importancia = Math.min(3, Math.max(1, +dados.importancia || 2));
   if (/^\d{4}-\d{2}-\d{2}$/.test(dados.data_prevista || '')) t.dataPrevista = dados.data_prevista;
+  if (/^\d{2}:\d{2}$/.test(dados.horario || '')) t.hora = dados.horario;
   t.tempoEstimado = Math.max(0, +dados.tempo_estimado_minutos || 0);
   t.entregas = (Array.isArray(dados.entregas) ? dados.entregas : [])
     .filter(e => e && e.texto)
@@ -567,7 +745,7 @@ function novaTarefaVazia() {
   return {
     id: uid(), kind: 'task', titulo: '', descricao: '',
     categoria: 'trabalho_diario', urgencia: 2, importancia: 2,
-    dataPrevista: '', tempoEstimado: 0, entregas: [],
+    dataPrevista: '', hora: '', tempoEstimado: 0, entregas: [],
     recorrencia: null, datasConcluidas: [],
     status: 'ativa', criadaEm: new Date().toISOString(),
   };
@@ -603,6 +781,7 @@ function abrirModal(tarefa, opcoes = {}) {
   $('#f-urgencia').value = t.urgencia || 2;
   $('#f-importancia').value = t.importancia || 2;
   $('#f-data').value = t.dataPrevista || '';
+  $('#f-hora').value = t.hora || '';
   $('#f-horas').value = t.tempoEstimado ? Math.floor(t.tempoEstimado / 60) || '' : '';
   $('#f-minutos').value = t.tempoEstimado ? t.tempoEstimado % 60 || '' : '';
 
@@ -644,6 +823,7 @@ function salvarFormulario(ev) {
   t.urgencia = +$('#f-urgencia').value;
   t.importancia = +$('#f-importancia').value;
   t.dataPrevista = $('#f-data').value;
+  t.hora = $('#f-hora').value;
   t.tempoEstimado = (+$('#f-horas').value || 0) * 60 + (+$('#f-minutos').value || 0);
 
   t.entregas = $$('#f-entregas .entrega-form').map(div => ({
@@ -667,6 +847,76 @@ function salvarFormulario(ev) {
   fecharModal();
   renderTudo();
   toast('Demanda salva.');
+}
+
+/* ============================ Calendário (Google Agenda / .ics) ============================ */
+
+function dadosEventoDoFormulario() {
+  const titulo = $('#f-titulo').value.trim();
+  if (!titulo) { toast('Preencha o título primeiro.'); return null; }
+  const data = $('#f-data').value || dataStr();
+  const hora = $('#f-hora').value;
+  const dur = (+$('#f-horas').value || 0) * 60 + (+$('#f-minutos').value || 0) || 60;
+  const tipo = $('#f-rec-tipo').value;
+  let rrule = '';
+  if (tipo === 'diaria') rrule = 'FREQ=DAILY';
+  if (tipo === 'semanal') {
+    const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    const dias = $$('#f-rec-semanal input:checked').map(cb => BYDAY[+cb.value]);
+    if (dias.length) rrule = 'FREQ=WEEKLY;BYDAY=' + dias.join(',');
+  }
+  if (tipo === 'mensal') rrule = 'FREQ=MONTHLY;BYMONTHDAY=' + Math.min(31, Math.max(1, +$('#f-rec-dia').value || 1));
+  return { titulo, descricao: $('#f-descricao').value.trim(), data, hora, dur, rrule };
+}
+
+function compactarData(data) { return data.replace(/-/g, ''); }
+
+function fimEvento(ev) {
+  const [h, m] = ev.hora.split(':').map(Number);
+  const d = deStr(ev.data);
+  d.setHours(h, m + ev.dur, 0, 0);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`;
+}
+
+function abrirGoogleAgenda() {
+  const ev = dadosEventoDoFormulario();
+  if (!ev) return;
+  const dates = ev.hora
+    ? `${compactarData(ev.data)}T${ev.hora.replace(':', '')}00/${fimEvento(ev)}`
+    : `${compactarData(ev.data)}/${compactarData(addDias(ev.data, 1))}`;
+  let url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + encodeURIComponent(ev.titulo)
+    + '&dates=' + dates;
+  if (ev.descricao) url += '&details=' + encodeURIComponent(ev.descricao);
+  if (ev.rrule) url += '&recur=' + encodeURIComponent('RRULE:' + ev.rrule);
+  window.open(url, '_blank');
+}
+
+function baixarIcs() {
+  const ev = dadosEventoDoFormulario();
+  if (!ev) return;
+  const escapar = (s) => s.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
+  const linhas = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Prumo//PT-BR', 'BEGIN:VEVENT',
+    'UID:' + uid() + '@prumo',
+    'DTSTAMP:' + new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z',
+    'SUMMARY:' + escapar(ev.titulo)];
+  if (ev.hora) {
+    linhas.push('DTSTART:' + compactarData(ev.data) + 'T' + ev.hora.replace(':', '') + '00');
+    linhas.push('DTEND:' + fimEvento(ev));
+  } else {
+    linhas.push('DTSTART;VALUE=DATE:' + compactarData(ev.data));
+    linhas.push('DTEND;VALUE=DATE:' + compactarData(addDias(ev.data, 1)));
+  }
+  if (ev.rrule) linhas.push('RRULE:' + ev.rrule);
+  if (ev.descricao) linhas.push('DESCRIPTION:' + escapar(ev.descricao));
+  linhas.push('END:VEVENT', 'END:VCALENDAR');
+  const blob = new Blob([linhas.join('\r\n')], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (ev.titulo.replace(/\W+/g, '-').toLowerCase().slice(0, 40) || 'evento') + '.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 /* ============================ Sincronização (Firebase) ============================ */
@@ -859,6 +1109,7 @@ function renderTudo() {
   if (viewAtual === 'hoje') renderHoje();
   else if (viewAtual === 'semana') renderSemana();
   else if (viewAtual === 'mes') renderMes();
+  else if (viewAtual === 'painel') renderPainel();
   else if (viewAtual === 'demandas') renderDemandas();
   else if (viewAtual === 'diario') renderDiario();
   else if (viewAtual === 'capturar') { renderCapturaFotos(); renderCapturas(); }
@@ -917,6 +1168,8 @@ function ligarEventos() {
   $('#form-tarefa').onsubmit = salvarFormulario;
   $('#f-rec-tipo').onchange = atualizarCamposRecorrencia;
   $('#btn-add-entrega').onclick = () => $('#f-entregas').appendChild(linhaEntrega());
+  $('#btn-gcal').onclick = abrirGoogleAgenda;
+  $('#btn-ics').onclick = baixarIcs;
   $('#btn-excluir').onclick = () => {
     if (tarefaEmEdicao && confirm('Excluir esta demanda?')) {
       excluirItem(tarefaEmEdicao.id);
