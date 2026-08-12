@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#3f4a3a"/>
-  <rect x="116" y="132" width="280" height="280" rx="36" fill="none" stroke="#fff" stroke-width="30"/>
-  <line x1="116" y1="216" x2="396" y2="216" stroke="#fff" stroke-width="26"/>
-  <line x1="182" y1="100" x2="182" y2="164" stroke="#fff" stroke-width="30" stroke-linecap="round"/>
-  <line x1="330" y1="100" x2="330" y2="164" stroke="#fff" stroke-width="30" stroke-linecap="round"/>
-  <path d="M188 310 l42 42 l84 -84" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#efe9df">
+    <!-- alça -->
+    <path d="M231 130 V94 a25 25 0 0 1 50 0 V130" fill="none" stroke="#efe9df" stroke-width="14"/>
+    <!-- colar -->
+    <rect x="207" y="120" width="98" height="41" rx="7"/>
+    <!-- corpo cônico -->
+    <path d="M191 158 H321 a16 16 0 0 1 15 22 L259 447 a4 4 0 0 1 -6 0 L176 180 a16 16 0 0 1 15 -22 Z"/>
+  </g>
 </svg>
