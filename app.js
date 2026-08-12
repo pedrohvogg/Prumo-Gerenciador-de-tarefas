@@ -1,5 +1,5 @@
 /* =====================================================================
-   Planejador — demandas, rotina e diário
+   Prumo — gerenciador de tarefas: demandas, rotina e diário
    Site estático (PWA). Dados no localStorage; sincronização opcional
    via Firebase (Google + Firestore) configurada em Ajustes.
    ===================================================================== */
@@ -802,7 +802,7 @@ function exportarDados() {
   const blob = new Blob([JSON.stringify(itens, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `planejador-backup-${dataStr()}.json`;
+  a.download = `prumo-backup-${dataStr()}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }

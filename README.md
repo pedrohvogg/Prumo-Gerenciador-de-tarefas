@@ -1,4 +1,4 @@
-# Planejador — Demandas & Rotina
+# Prumo — Gerenciador de Tarefas
 
 Site pessoal de planejamento (diário, semanal e mensal) que funciona no computador e no celular. É um site estático (PWA): funciona offline, pode ser instalado como app no celular e, opcionalmente, sincroniza seus dados entre aparelhos via Firebase.
 
@@ -19,7 +19,7 @@ Site pessoal de planejamento (diário, semanal e mensal) que funciona no computa
 1. Faça o merge deste branch no `main` (ou copie os arquivos para o `main`).
 2. No GitHub, abra **Settings → Pages**.
 3. Em **Source**, escolha **Deploy from a branch**, selecione `main` e a pasta `/ (root)`. Salve.
-4. Em ~1 minuto o site estará em `https://pedrohvogg.github.io/ProjetoDS/`.
+4. Em ~1 minuto o site estará em `https://pedrohvogg.github.io/Prumo-Gerenciador-de-tarefas/`.
 
 No celular, abra esse endereço no navegador e use **“Adicionar à tela inicial”** para instalar como app.
 
