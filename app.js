@@ -115,8 +115,10 @@ function concluidaNoDia(t, data) {
   return t.recorrencia ? (t.datasConcluidas || []).includes(data) : t.status === 'concluida';
 }
 function pontuacao(t) { return t.importancia * 2 + t.urgencia; }
+// Urgente exige urgência alta; importante vale a partir de média, para que uma
+// demanda no padrão caia em "Agendar" e não no quadrante do que é descartável.
 function quadrante(t) {
-  const u = t.urgencia >= 3, i = t.importancia >= 3;
+  const u = t.urgencia >= 3, i = t.importancia >= 2;
   return u && i ? 1 : i ? 2 : u ? 3 : 4;
 }
 function atrasada(t, hoje) {
@@ -217,6 +219,27 @@ function htmlTarefa(t, data, opcoes = {}) {
         <div class="task-titulo">${escaparHtml(t.titulo)}</div>
         <div class="task-meta">${htmlBadges(t, data)}</div>
         ${entregas}
+      </div>
+    </div>`;
+}
+
+// Cartão compacto usado na matriz de Eisenhower (duas colunas, inclusive no celular)
+function htmlTarefaMini(t) {
+  const hoje = dataStr();
+  const feita = concluidaNoDia(t, hoje);
+  const catCor = (CATEGORIAS[t.categoria] || {}).cor || 'var(--muted)';
+  const info = [];
+  if (t.recorrencia) info.push('↻ ' + descreverRecorrencia(t.recorrencia));
+  else if (t.dataPrevista) info.push(atrasada(t, hoje) ? `⚠ venceu ${fmtDataCurta(t.dataPrevista)}` : `📅 ${fmtDataCurta(t.dataPrevista)}`);
+  if (t.hora) info.push('🕒 ' + t.hora);
+  if (t.tempoEstimado) info.push('⏱ ' + fmtTempo(t.tempoEstimado));
+  return `
+    <div class="task-mini ${feita ? 'concluida' : ''}" style="--cat-cor:${catCor}"
+         title="${escaparHtml((CATEGORIAS[t.categoria] || {}).nome || '')}">
+      <button class="task-mini-check" data-concluir="${t.id}" data-data="${hoje}" title="Concluir">${feita ? '✓' : ''}</button>
+      <div class="task-mini-txt" data-editar="${t.id}">
+        <div class="task-mini-titulo">${escaparHtml(t.titulo)}</div>
+        ${info.length ? `<div class="task-mini-info">${escaparHtml(info.join(' · '))}</div>` : ''}
       </div>
     </div>`;
 }
@@ -564,11 +587,11 @@ function renderDemandas() {
 
   if (mostrarMatriz) {
     for (const q of [1, 2, 3, 4]) {
-      const el = $(`.q-lista[data-q="${q}"]`);
       const doQ = lista.filter(t => quadrante(t) === q);
-      el.innerHTML = doQ.length
-        ? doQ.map(t => htmlTarefa(t, dataStr(), { compacta: true })).join('')
-        : '<p class="vazio">—</p>';
+      $(`.q-num[data-num="${q}"]`).textContent = doQ.length;
+      $(`.q-lista[data-q="${q}"]`).innerHTML = doQ.length
+        ? doQ.map(htmlTarefaMini).join('')
+        : '<p class="q-vazio">vazio</p>';
     }
     ligarEventosTarefas($('#demandas-matriz'));
   } else {

@@ -140,11 +140,49 @@
       </div>
     </div>
     <div id="demandas-lista" class="task-list"></div>
-    <div id="demandas-matriz" class="matriz" hidden>
-      <div class="quadrante q1"><h4>🔥 Fazer agora</h4><div class="q-lista" data-q="1"></div></div>
-      <div class="quadrante q2"><h4>📅 Agendar</h4><div class="q-lista" data-q="2"></div></div>
-      <div class="quadrante q3"><h4>⚡ Encaixar rápido</h4><div class="q-lista" data-q="3"></div></div>
-      <div class="quadrante q4"><h4>🌱 Quando der</h4><div class="q-lista" data-q="4"></div></div>
+    <div id="demandas-matriz" class="matriz-wrap" hidden>
+      <div class="matriz">
+        <span class="eixo-canto"></span>
+        <span class="eixo-x">Urgente</span>
+        <span class="eixo-x">Não urgente</span>
+
+        <span class="eixo-y">Importante</span>
+        <div class="quadrante q1">
+          <div class="q-topo">
+            <h4>Fazer</h4>
+            <span class="q-num" data-num="1">0</span>
+          </div>
+          <p class="q-sub">urgente e importante</p>
+          <div class="q-lista" data-q="1"></div>
+        </div>
+        <div class="quadrante q2">
+          <div class="q-topo">
+            <h4>Agendar</h4>
+            <span class="q-num" data-num="2">0</span>
+          </div>
+          <p class="q-sub">importante, sem pressa</p>
+          <div class="q-lista" data-q="2"></div>
+        </div>
+
+        <span class="eixo-y">Não importante</span>
+        <div class="quadrante q3">
+          <div class="q-topo">
+            <h4>Delegar</h4>
+            <span class="q-num" data-num="3">0</span>
+          </div>
+          <p class="q-sub">urgente, pouco importante</p>
+          <div class="q-lista" data-q="3"></div>
+        </div>
+        <div class="quadrante q4">
+          <div class="q-topo">
+            <h4>Eliminar</h4>
+            <span class="q-num" data-num="4">0</span>
+          </div>
+          <p class="q-sub">nem urgente, nem importante</p>
+          <div class="q-lista" data-q="4"></div>
+        </div>
+      </div>
+      <p class="dica">Conta como <strong>urgente</strong> a demanda com urgência alta; como <strong>importante</strong>, a partir de importância média. Toque na demanda para ajustar os níveis.</p>
     </div>
     <p id="demandas-vazio" class="vazio" hidden>Nenhuma demanda encontrada.</p>
   </section>

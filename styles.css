@@ -325,15 +325,66 @@ button { font: inherit; cursor: pointer; color: inherit; background: none; borde
 }
 .chip.ativo { background: color-mix(in srgb, var(--cat-cor, var(--primary)) 15%, transparent); color: var(--cat-cor, var(--primary)); border-color: var(--cat-cor, var(--primary)); font-weight: 800; }
 
-.matriz { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.quadrante { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
-.quadrante h4 { font-size: .8rem; margin-bottom: 8px; }
-.q-lista { display: flex; flex-direction: column; gap: 6px; }
-.quadrante.q1 { border-top: 3px solid var(--danger); }
-.quadrante.q2 { border-top: 3px solid var(--primary); }
-.quadrante.q3 { border-top: 3px solid var(--cat-estudos); }
-.quadrante.q4 { border-top: 3px solid var(--ok); }
-@media (max-width: 600px) { .matriz { grid-template-columns: 1fr; } }
+/* Matriz de Eisenhower: 2×2 com eixos rotulados, mantida em qualquer tela */
+.matriz {
+  display: grid;
+  grid-template-columns: 20px 1fr 1fr;
+  grid-auto-rows: auto 1fr 1fr;
+  gap: 6px;
+  align-items: stretch;
+}
+.eixo-x, .eixo-y {
+  display: flex; align-items: center; justify-content: center;
+  font-size: .64rem; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted); text-align: center;
+}
+.eixo-y { writing-mode: vertical-rl; transform: rotate(180deg); }
+@media (min-width: 640px) { .matriz { grid-template-columns: 24px 1fr 1fr; gap: 10px; } .eixo-x, .eixo-y { font-size: .7rem; } }
+
+.quadrante {
+  background: var(--surface); border: 1px solid var(--border);
+  border-top: 3px solid var(--q-cor); border-radius: 12px; padding: 9px 9px 10px;
+  display: flex; flex-direction: column; min-width: 0;
+}
+.quadrante.q1 { --q-cor: var(--danger); }
+.quadrante.q2 { --q-cor: var(--primary); }
+.quadrante.q3 { --q-cor: var(--accent); }
+.quadrante.q4 { --q-cor: var(--muted); }
+.q-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.quadrante h4 { font-size: .84rem; color: var(--q-cor); }
+.q-num {
+  font-size: .68rem; font-weight: 800; min-width: 20px; text-align: center;
+  padding: 1px 6px; border-radius: 20px; color: var(--q-cor);
+  background: color-mix(in srgb, var(--q-cor) 14%, transparent);
+}
+.q-sub { font-size: .66rem; color: var(--muted); margin: 1px 0 8px; line-height: 1.25; }
+.q-lista { display: flex; flex-direction: column; gap: 5px; }
+
+/* Cartão compacto — cabe duas colunas mesmo no celular */
+.task-mini {
+  display: flex; gap: 6px; align-items: flex-start; cursor: pointer;
+  background: color-mix(in srgb, var(--cat-cor) 9%, var(--surface-2));
+  border-left: 3px solid var(--cat-cor); border-radius: 8px; padding: 6px 7px;
+}
+.task-mini-check {
+  width: 15px; height: 15px; min-width: 15px; margin-top: 1px;
+  border: 1.5px solid var(--muted); border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; font-size: .58rem;
+}
+.task-mini.concluida .task-mini-check { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.task-mini-txt { min-width: 0; flex: 1; }
+.task-mini-titulo { font-size: .74rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.task-mini.concluida .task-mini-titulo { text-decoration: line-through; color: var(--muted); }
+.task-mini-info { font-size: .62rem; color: var(--muted); margin-top: 1px; }
+.q-vazio { font-size: .66rem; color: var(--muted); opacity: .7; padding: 2px 0; }
+@media (min-width: 640px) {
+  .quadrante { padding: 12px; }
+  .quadrante h4 { font-size: .92rem; }
+  .q-sub { font-size: .7rem; margin-bottom: 10px; }
+  .task-mini { padding: 7px 9px; }
+  .task-mini-titulo { font-size: .82rem; }
+  .task-mini-info { font-size: .68rem; }
+}
 
 /* ============ Diário ============ */
 .diario-mini { width: 100%; min-height: 74px; resize: vertical; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px; font: inherit; }
