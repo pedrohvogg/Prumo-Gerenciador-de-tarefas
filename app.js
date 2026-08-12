@@ -115,8 +115,10 @@ function concluidaNoDia(t, data) {
   return t.recorrencia ? (t.datasConcluidas || []).includes(data) : t.status === 'concluida';
 }
 function pontuacao(t) { return t.importancia * 2 + t.urgencia; }
+// Urgente exige urgência alta; importante vale a partir de média, para que uma
+// demanda no padrão caia em "Agendar" e não no quadrante do que é descartável.
 function quadrante(t) {
-  const u = t.urgencia >= 3, i = t.importancia >= 3;
+  const u = t.urgencia >= 3, i = t.importancia >= 2;
   return u && i ? 1 : i ? 2 : u ? 3 : 4;
 }
 function atrasada(t, hoje) {
