@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4f6ef7">
+<meta name="theme-color" content="#4f46e5">
 <title>Prumo — Gerenciador de Tarefas</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -88,9 +91,31 @@
     </div>
     <div class="mes-cabecalho" id="mes-cabecalho"></div>
     <div id="mes-grid" class="mes-grid"></div>
+    <p class="dica">Toque em um dia para abri-lo.</p>
+  </section>
+
+  <!-- ===================== PAINEL ===================== -->
+  <section id="view-painel" class="view" hidden>
     <div class="bloco">
-      <h3 class="bloco-titulo" id="mes-dia-titulo">Selecione um dia</h3>
-      <div id="mes-dia-tarefas" class="task-list"></div>
+      <h3 class="bloco-titulo">Visão geral</h3>
+      <div id="painel-visao" class="stats-grid"></div>
+    </div>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Produtividade — últimos 14 dias</h3>
+      <div id="painel-grafico" class="grafico14"></div>
+      <p id="painel-melhor-dia" class="painel-nota"></p>
+    </div>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Categorias</h3>
+      <div id="painel-categorias" class="cat-dist"></div>
+    </div>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Sequências</h3>
+      <div id="painel-streaks" class="stats-grid dois"></div>
+      <div class="mini-cal-wrap">
+        <div id="painel-minical-titulo" class="mini-cal-titulo"></div>
+        <div id="painel-minical" class="mini-cal"></div>
+      </div>
     </div>
   </section>
 
@@ -228,6 +253,7 @@
   <button class="tab" data-view="semana"><span>▤</span>Semana</button>
   <button class="tab" data-view="mes"><span>▦</span>Mês</button>
   <button class="tab" data-view="demandas"><span>≡</span>Demandas</button>
+  <button class="tab" data-view="painel"><span>◫</span>Painel</button>
   <button class="tab" data-view="diario"><span>✎</span>Diário</button>
   <button class="tab" data-view="capturar"><span>✨</span>Capturar</button>
 </nav>
@@ -276,13 +302,17 @@
           <input id="f-data" class="input" type="date">
         </label>
         <label class="campo">
-          <span>Tempo estimado</span>
-          <div class="tempo-par">
-            <input id="f-horas" class="input" type="number" min="0" max="999" placeholder="h" inputmode="numeric">
-            <input id="f-minutos" class="input" type="number" min="0" max="59" placeholder="min" inputmode="numeric">
-          </div>
+          <span>Horário</span>
+          <input id="f-hora" class="input" type="time">
         </label>
       </div>
+      <label class="campo">
+        <span>Tempo estimado</span>
+        <div class="tempo-par">
+          <input id="f-horas" class="input" type="number" min="0" max="999" placeholder="h" inputmode="numeric">
+          <input id="f-minutos" class="input" type="number" min="0" max="59" placeholder="min" inputmode="numeric">
+        </div>
+      </label>
 
       <div class="campo">
         <span>Entregas previstas</span>
@@ -310,6 +340,15 @@
         <div id="f-rec-mensal" class="campo" hidden>
           <input id="f-rec-dia" class="input compact" type="number" min="1" max="31" placeholder="Dia do mês (1–31)">
         </div>
+      </div>
+
+      <div class="campo">
+        <span>Adicionar ao calendário</span>
+        <div class="agenda-botoes">
+          <button type="button" id="btn-gcal" class="btn secundario compact">📅 Google Agenda</button>
+          <button type="button" id="btn-ics" class="btn secundario compact">⬇ Arquivo .ics</button>
+        </div>
+        <p class="dica">Cria o evento com o título, a data, o horário e a recorrência preenchidos acima. O .ics serve para Outlook e o calendário do iPhone.</p>
       </div>
 
       <div class="modal-rodape">

@@ -4,9 +4,11 @@ Site pessoal de planejamento (diário, semanal e mensal) que funciona no computa
 
 ## O que ele faz
 
-- **Demandas** com urgência, importância, data prevista, tempo estimado e **entregas previstas** (cada entrega com a própria data).
+- **Demandas** com urgência, importância, data prevista, **horário**, tempo estimado e **entregas previstas** (cada entrega com a própria data).
+- **Painel de estatísticas**: números do momento com comparativo da semana anterior, gráfico dos últimos 14 dias, melhor dia da semana, distribuição por categoria (com alerta de categorias negligenciadas), sequência atual de dias com conclusão, recorde histórico e mini-calendário de dias ativos.
+- **Integração com calendário**: cada demanda pode virar evento no Google Agenda ou arquivo `.ics` (Outlook/calendário do iPhone), com horário, duração e recorrência.
 - **Priorização** automática (matriz urgência × importância, estilo Eisenhower) e ordenação por prioridade, prazo ou tempo.
-- **Planejamento diário, semanal e mensal** com navegação por datas.
+- **Planejamento diário, semanal e mensal** com navegação por datas — tocar em um dia da semana ou do mês abre aquele dia.
 - **Categorias fixas da rotina**: Trabalho (demandas diárias), Trabalho (projetos), Saúde mental, Exercício, Estudos e Lazer.
 - **Recorrência**: tarefas diárias, semanais (escolhendo os dias) ou mensais (dia do mês).
 - **Diário**: anotações por dia + registro automático das ações (tarefas e entregas concluídas).
