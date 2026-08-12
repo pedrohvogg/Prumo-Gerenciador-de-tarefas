@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4f6ef7">
+<title>Planejador — Demandas & Rotina</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-logo">◧</span>
+      <span class="brand-name">Planejador</span>
+    </div>
+    <div class="topbar-actions">
+      <span id="sync-status" class="sync-status" title="Estado da sincronização">local</span>
+      <button id="btn-theme" class="icon-btn" title="Alternar tema">◐</button>
+      <button id="btn-settings" class="icon-btn" title="Ajustes">⚙</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===================== HOJE ===================== -->
+  <section id="view-hoje" class="view">
+    <div class="date-nav">
+      <button class="icon-btn" data-daynav="-1">‹</button>
+      <div class="date-nav-center">
+        <h2 id="hoje-titulo">Hoje</h2>
+        <div id="hoje-data" class="muted"></div>
+      </div>
+      <button class="icon-btn" data-daynav="1">›</button>
+    </div>
+
+    <div id="hoje-resumo" class="resumo-row"></div>
+
+    <div id="hoje-atrasadas-wrap" class="bloco" hidden>
+      <h3 class="bloco-titulo perigo">⚠ Atrasadas</h3>
+      <div id="hoje-atrasadas" class="task-list"></div>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Prioridades do dia</h3>
+      <div id="hoje-tarefas" class="task-list"></div>
+      <p id="hoje-vazio" class="vazio" hidden>Nada planejado para este dia. Adicione uma demanda com o botão +.</p>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Rotina recorrente</h3>
+      <div id="hoje-recorrentes" class="task-list"></div>
+      <p id="hoje-rec-vazio" class="vazio" hidden>Nenhuma tarefa recorrente cai neste dia.</p>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Diário rápido</h3>
+      <textarea id="hoje-diario" class="diario-mini" placeholder="Como foi o dia? Anotações rápidas… (salva sozinho)"></textarea>
+    </div>
+  </section>
+
+  <!-- ===================== SEMANA ===================== -->
+  <section id="view-semana" class="view" hidden>
+    <div class="date-nav">
+      <button class="icon-btn" data-weeknav="-1">‹</button>
+      <div class="date-nav-center">
+        <h2>Semana</h2>
+        <div id="semana-intervalo" class="muted"></div>
+      </div>
+      <button class="icon-btn" data-weeknav="1">›</button>
+    </div>
+    <div id="semana-grid" class="semana-grid"></div>
+  </section>
+
+  <!-- ===================== MÊS ===================== -->
+  <section id="view-mes" class="view" hidden>
+    <div class="date-nav">
+      <button class="icon-btn" data-monthnav="-1">‹</button>
+      <div class="date-nav-center">
+        <h2 id="mes-titulo">Mês</h2>
+      </div>
+      <button class="icon-btn" data-monthnav="1">›</button>
+    </div>
+    <div class="mes-cabecalho" id="mes-cabecalho"></div>
+    <div id="mes-grid" class="mes-grid"></div>
+    <div class="bloco">
+      <h3 class="bloco-titulo" id="mes-dia-titulo">Selecione um dia</h3>
+      <div id="mes-dia-tarefas" class="task-list"></div>
+    </div>
+  </section>
+
+  <!-- ===================== DEMANDAS ===================== -->
+  <section id="view-demandas" class="view" hidden>
+    <div class="filtros">
+      <input id="filtro-busca" class="input" type="search" placeholder="Buscar demanda…">
+      <div class="filtro-chips" id="filtro-categorias"></div>
+      <div class="filtro-linha">
+        <select id="filtro-status" class="input compact">
+          <option value="ativas">Ativas</option>
+          <option value="todas">Todas</option>
+          <option value="concluidas">Concluídas</option>
+        </select>
+        <select id="ordenacao" class="input compact">
+          <option value="prioridade">Ordenar: prioridade</option>
+          <option value="prazo">Ordenar: prazo</option>
+          <option value="tempo">Ordenar: tempo estimado</option>
+          <option value="recentes">Ordenar: recentes</option>
+        </select>
+        <button id="btn-matriz" class="btn secundario">Matriz</button>
+      </div>
+    </div>
+    <div id="demandas-lista" class="task-list"></div>
+    <div id="demandas-matriz" class="matriz" hidden>
+      <div class="quadrante q1"><h4>🔥 Fazer agora</h4><div class="q-lista" data-q="1"></div></div>
+      <div class="quadrante q2"><h4>📅 Agendar</h4><div class="q-lista" data-q="2"></div></div>
+      <div class="quadrante q3"><h4>⚡ Encaixar rápido</h4><div class="q-lista" data-q="3"></div></div>
+      <div class="quadrante q4"><h4>🌱 Quando der</h4><div class="q-lista" data-q="4"></div></div>
+    </div>
+    <p id="demandas-vazio" class="vazio" hidden>Nenhuma demanda encontrada.</p>
+  </section>
+
+  <!-- ===================== DIÁRIO ===================== -->
+  <section id="view-diario" class="view" hidden>
+    <div class="date-nav">
+      <button class="icon-btn" data-diarionav="-1">‹</button>
+      <div class="date-nav-center">
+        <h2>Diário</h2>
+        <div id="diario-data" class="muted"></div>
+      </div>
+      <button class="icon-btn" data-diarionav="1">›</button>
+    </div>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Anotações do dia</h3>
+      <textarea id="diario-nota" class="diario-texto" placeholder="Reflexões, decisões, contexto do dia… (salva sozinho)"></textarea>
+    </div>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Ações realizadas</h3>
+      <ul id="diario-acoes" class="acoes-lista"></ul>
+      <p id="diario-acoes-vazio" class="vazio" hidden>Nenhuma ação registrada neste dia. Concluir tarefas registra aqui automaticamente.</p>
+    </div>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Prioridades que estavam previstas</h3>
+      <div id="diario-previstas" class="task-list"></div>
+    </div>
+  </section>
+
+  <!-- ===================== CAPTURAR ===================== -->
+  <section id="view-capturar" class="view" hidden>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Capturar contexto</h3>
+      <p class="muted">Cole um texto ou adicione fotos com o contexto da demanda (e-mail, mensagem, foto de quadro…). Depois envie para o Claude definir urgência, importância, prazo e tempo estimado.</p>
+      <textarea id="captura-texto" class="diario-texto" placeholder="Cole aqui o texto com o contexto…"></textarea>
+      <div class="captura-fotos-linha">
+        <label class="btn secundario" for="captura-foto-input">📷 Adicionar foto</label>
+        <input id="captura-foto-input" type="file" accept="image/*" multiple hidden>
+      </div>
+      <div id="captura-fotos" class="captura-fotos"></div>
+      <div class="captura-acoes">
+        <button id="btn-enviar-claude" class="btn primario">✨ Analisar com o Claude (Opus)</button>
+        <button id="btn-salvar-captura" class="btn secundario">Salvar captura</button>
+      </div>
+      <p class="dica">O prompt é copiado e um chat novo abre no claude.ai — selecione o modelo <strong>Opus</strong> lá, cole (Ctrl+V) e anexe as fotos se houver. Depois volte e cole a resposta abaixo.</p>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Colar resposta do Claude</h3>
+      <textarea id="captura-resposta" class="diario-mini" placeholder="Cole aqui a resposta do Claude (o bloco JSON)…"></textarea>
+      <button id="btn-criar-da-resposta" class="btn primario">Criar demanda a partir da resposta</button>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Capturas salvas</h3>
+      <div id="capturas-lista" class="capturas-lista"></div>
+      <p id="capturas-vazio" class="vazio" hidden>Nenhuma captura salva.</p>
+    </div>
+  </section>
+
+  <!-- ===================== AJUSTES ===================== -->
+  <section id="view-ajustes" class="view" hidden>
+    <div class="bloco">
+      <h3 class="bloco-titulo">Sincronização na nuvem (Firebase)</h3>
+      <p class="muted">Com o Firebase configurado, suas demandas sincronizam entre o computador e o celular. Veja o passo a passo no arquivo <strong>README</strong> do projeto.</p>
+      <div id="sync-config-wrap">
+        <textarea id="firebase-config" class="diario-mini mono" placeholder='Cole aqui o objeto firebaseConfig, ex.:
+{
+  "apiKey": "…",
+  "authDomain": "…",
+  "projectId": "…",
+  "appId": "…"
+}'></textarea>
+        <button id="btn-salvar-firebase" class="btn primario">Salvar configuração</button>
+      </div>
+      <div id="sync-conta-wrap" class="sync-conta" hidden>
+        <p id="sync-conta-info" class="muted"></p>
+        <button id="btn-login" class="btn primario" hidden>Entrar com Google</button>
+        <button id="btn-logout" class="btn secundario" hidden>Sair da conta</button>
+        <button id="btn-remover-firebase" class="btn perigo-btn">Remover configuração</button>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Backup</h3>
+      <div class="captura-acoes">
+        <button id="btn-exportar" class="btn secundario">⬇ Exportar dados (JSON)</button>
+        <label class="btn secundario" for="importar-input">⬆ Importar dados</label>
+        <input id="importar-input" type="file" accept="application/json" hidden>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h3 class="bloco-titulo">Sobre</h3>
+      <p class="muted">Planejador pessoal de demandas e rotina — funciona offline, instalável no celular (menu do navegador → “Adicionar à tela inicial”).</p>
+    </div>
+  </section>
+</main>
+
+<!-- Botão flutuante -->
+<button id="btn-nova" class="fab" title="Nova demanda">＋</button>
+
+<!-- Navegação inferior -->
+<nav class="tabbar">
+  <button class="tab ativo" data-view="hoje"><span>☀</span>Hoje</button>
+  <button class="tab" data-view="semana"><span>▤</span>Semana</button>
+  <button class="tab" data-view="mes"><span>▦</span>Mês</button>
+  <button class="tab" data-view="demandas"><span>≡</span>Demandas</button>
+  <button class="tab" data-view="diario"><span>✎</span>Diário</button>
+  <button class="tab" data-view="capturar"><span>✨</span>Capturar</button>
+</nav>
+
+<!-- ===================== MODAL DE DEMANDA ===================== -->
+<div id="modal" class="modal" hidden>
+  <div class="modal-caixa">
+    <div class="modal-topo">
+      <h3 id="modal-titulo">Nova demanda</h3>
+      <button id="modal-fechar" class="icon-btn">✕</button>
+    </div>
+    <form id="form-tarefa" class="form">
+      <label class="campo">
+        <span>Título *</span>
+        <input id="f-titulo" class="input" required maxlength="200" placeholder="O que precisa ser feito?">
+      </label>
+      <label class="campo">
+        <span>Descrição</span>
+        <textarea id="f-descricao" class="input" rows="3" placeholder="Detalhes, contexto, links…"></textarea>
+      </label>
+      <label class="campo">
+        <span>Categoria</span>
+        <select id="f-categoria" class="input"></select>
+      </label>
+      <div class="campo-par">
+        <label class="campo">
+          <span>Urgência</span>
+          <select id="f-urgencia" class="input">
+            <option value="1">Baixa</option>
+            <option value="2" selected>Média</option>
+            <option value="3">Alta</option>
+          </select>
+        </label>
+        <label class="campo">
+          <span>Importância</span>
+          <select id="f-importancia" class="input">
+            <option value="1">Baixa</option>
+            <option value="2" selected>Média</option>
+            <option value="3">Alta</option>
+          </select>
+        </label>
+      </div>
+      <div class="campo-par">
+        <label class="campo">
+          <span>Data prevista</span>
+          <input id="f-data" class="input" type="date">
+        </label>
+        <label class="campo">
+          <span>Tempo estimado</span>
+          <div class="tempo-par">
+            <input id="f-horas" class="input" type="number" min="0" max="999" placeholder="h" inputmode="numeric">
+            <input id="f-minutos" class="input" type="number" min="0" max="59" placeholder="min" inputmode="numeric">
+          </div>
+        </label>
+      </div>
+
+      <div class="campo">
+        <span>Entregas previstas</span>
+        <div id="f-entregas" class="entregas"></div>
+        <button type="button" id="btn-add-entrega" class="btn secundario compact">+ Adicionar entrega</button>
+      </div>
+
+      <div class="campo">
+        <span>Recorrência</span>
+        <select id="f-rec-tipo" class="input">
+          <option value="">Sem recorrência (demanda única)</option>
+          <option value="diaria">Todos os dias</option>
+          <option value="semanal">Semanal (dias da semana)</option>
+          <option value="mensal">Mensal (dia do mês)</option>
+        </select>
+        <div id="f-rec-semanal" class="rec-dias" hidden>
+          <label><input type="checkbox" value="1">S</label>
+          <label><input type="checkbox" value="2">T</label>
+          <label><input type="checkbox" value="3">Q</label>
+          <label><input type="checkbox" value="4">Q</label>
+          <label><input type="checkbox" value="5">S</label>
+          <label><input type="checkbox" value="6">S</label>
+          <label><input type="checkbox" value="0">D</label>
+        </div>
+        <div id="f-rec-mensal" class="campo" hidden>
+          <input id="f-rec-dia" class="input compact" type="number" min="1" max="31" placeholder="Dia do mês (1–31)">
+        </div>
+      </div>
+
+      <div class="modal-rodape">
+        <button type="button" id="btn-excluir" class="btn perigo-btn" hidden>Excluir</button>
+        <span class="flex-1"></span>
+        <button type="button" id="btn-cancelar" class="btn secundario">Cancelar</button>
+        <button type="submit" class="btn primario">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
